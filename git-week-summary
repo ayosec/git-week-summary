@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -euo pipefail
+
+ROOT="$PWD"
+
+find . -name .git -type d | sed 's/\.git$//' | while read -r REPO
+do
+  echo -e "\e[106m$REPO\e[K\e[m"
+  cd "$ROOT/$REPO"
+  email="$(git config --get user.email)"
+  git --no-pager log                        \
+    --all                                   \
+    --author="$email"                       \
+    --pretty="%Cred%h %Cgreen%ai %Creset%s" \
+    --no-merges                             \
+    --since="7 days ago"                    \
+  || true
+done

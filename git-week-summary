@@ -2,18 +2,29 @@
 
 set -euo pipefail
 
+OUTPUT="$(mktemp)"
 ROOT="$PWD"
+MONDAY="$(date -d 'last monday' --iso-8601)"
 
-find . -name .git -type d | sed 's/\.git$//' | while read -r REPO
+find . -name .git -type d | sed 's,^\./,,; s,/\.git$,,' | while read -r REPO
 do
-  echo -e "\e[106m$REPO\e[K\e[m"
   cd "$ROOT/$REPO"
   email="$(git config --get user.email)"
   git --no-pager log                        \
+    --color=always                          \
     --all                                   \
     --author="$email"                       \
     --pretty="%Cred%h %Cgreen%ai %Creset%s" \
     --no-merges                             \
-    --since="7 days ago"                    \
-  || true
+    --since="$MONDAY"                       \
+  > "$OUTPUT" || true
+
+  if [ "$(stat -c %s "$OUTPUT")" -ne 0 ]
+  then
+    echo -e "\e[30;48;5;230m$REPO\e[K\e[m"
+    cat "$OUTPUT"
+    echo
+  fi
 done
+
+rm -f "$OUTPUT"
